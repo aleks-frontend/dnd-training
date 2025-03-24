@@ -1,35 +1,78 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import "./App.css";
+
+import { Column as ColumnType, Task } from "./types";
+import Column from "./Column";
+import { DndContext, DragEndEvent } from "@dnd-kit/core";
+
+const COLUMNS: ColumnType[] = [
+  { id: "TODO", title: "To Do" },
+  { id: "IN_PROGRESS", title: "In Progress" },
+  { id: "DONE", title: "Done" },
+];
+
+const INITIAL_TASKS: Task[] = [
+  {
+    id: "1",
+    title: "Research Project",
+    description: "Gather requirements and create initial documentation",
+    status: "TODO",
+  },
+  {
+    id: "2",
+    title: "Design System",
+    description: "Create component library and design tokens",
+    status: "TODO",
+  },
+  {
+    id: "3",
+    title: "API Integration",
+    description: "Implement REST API endpoints",
+    status: "IN_PROGRESS",
+  },
+  {
+    id: "4",
+    title: "Testing",
+    description: "Write unit tests for core functionality",
+    status: "DONE",
+  },
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) {
+      return;
+    }
+
+    const taskId = active.id as string;
+    const newStatus = over.data.current.type === "TASK" ? over.data.current.taskStatus : over.data.current.columnId as Task["status"];
+
+    setTasks((tasks) =>
+      tasks.map((task) =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      )
+    );
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="p-4">
+      <div className="flex gap-8">
+        <DndContext onDragEnd={handleDragEnd}>
+          {COLUMNS.map((column) => (
+            <Column
+              key={column.id}
+              column={column}
+              tasks={tasks.filter((task) => task.status === column.id)}
+            />
+          ))}
+        </DndContext>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
